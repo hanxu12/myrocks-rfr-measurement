@@ -17,6 +17,7 @@ operation. It uses multiple-threading to perform these updates concurrently.
 -   Leader-follower replication setup
 -   Python 3.6 or above
 -   A C++ compiler that supports C++17
+-   MySQL C++ connector installed (`sudo apt-get install libmysqlcppconn-dev`)
 
 ## Building
 
