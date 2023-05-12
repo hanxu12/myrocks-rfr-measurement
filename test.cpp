@@ -35,8 +35,7 @@ void create_table(const std::string &table_name, Connection *conn)
     {
         std::cout << "Creating table " << table_name << "..." << std::endl;
         std::unique_ptr<Statement> stmt(conn->createStatement());
-        stmt->execute("CREATE TABLE IF NOT EXISTS " + table_name + " (id INT AUTO_INCREMENT PRIMARY 
-KEY, data VARCHAR(255) NOT NULL)");
+        stmt->execute("CREATE TABLE IF NOT EXISTS " + table_name + " (id INT AUTO_INCREMENT PRIMARY KEY, data VARCHAR(255) NOT NULL)");
         std::cout << "Table " << table_name << " created successfully." << std::endl;
     }
     catch (const SQLException &e)
@@ -50,8 +49,7 @@ void prepare_data(const std::string &table_name, int num_rows, Connection *conn)
     try
     {
         std::cout << "Preparing " << num_rows << " rows in " << table_name << "..." << std::endl;
-        std::unique_ptr<PreparedStatement> pstmt(conn->prepareStatement("INSERT INTO " + table_name + 
-" (data) VALUES (?)"));
+        std::unique_ptr<PreparedStatement> pstmt(conn->prepareStatement("INSERT INTO " + table_name + " (data) VALUES (?)"));
         for (int i = 0; i < num_rows; ++i)
         {
             std::cout << "idx " << i << std::endl;
@@ -70,25 +68,20 @@ void update_data(int thread_id, int start_id, int num_rows, int num_seconds, Con
 {
     try
     {
-        // std::cout << "Thread " << thread_id << " is updating " << num_rows << " rows..." << 
-std::endl;
-        std::unique_ptr<PreparedStatement> pstmt(conn->prepareStatement("UPDATE test_table SET data = 
-? WHERE id = ?"));
+        // std::cout << "Thread " << thread_id << " is updating " << num_rows << " rows..." << std::endl;
+        std::unique_ptr<PreparedStatement> pstmt(conn->prepareStatement("UPDATE test_table SET data = ? WHERE id = ?"));
         auto start_time = std::chrono::steady_clock::now();
         std::ofstream elapsed_time_file;
         if (thread_id == 1)
             elapsed_time_file.open("elapsed_time.txt", std::ios::app);
         while (true)
         {
-            int cur_sec = 
-std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - 
-start_time).count();
+            int cur_sec = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - start_time).count();
             if (cur_sec > num_seconds)
             {
                 break;
             }
-            // std::cout << "Thread " << thread_id << " is updating " << num_rows << " rows at " << 
-cur_sec << " sec" << std::endl;
+            // std::cout << "Thread " << thread_id << " is updating " << num_rows << " rows at " << cur_sec << " sec" << std::endl;
             for (int i = 0; i < num_rows; ++i)
             {
                 // std::cout << "idx " << i << std::endl;
@@ -98,21 +91,16 @@ cur_sec << " sec" << std::endl;
                 pstmt->setString(1, rand_str);
                 pstmt->setInt(2, id);
                 pstmt->executeUpdate();
-                auto elapsed_time = 
-std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - 
-start).count();
+                auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
                 if (thread_id == 1)
                 {
-                    const std::scoped_lock<std::mutex> lock(print_mtx); // scoped lock: 
-https://stackoverflow.com/a/14276591
-                    std::cout << "Thread " << thread_id << " updated row id " << id << " for " << 
-elapsed_time << " ms" << std::endl;
+                    const std::scoped_lock<std::mutex> lock(print_mtx); // scoped lock: https://stackoverflow.com/a/14276591
+                    std::cout << "Thread " << thread_id << " updated row id " << id << " for " << elapsed_time << " ms" << std::endl;
                     elapsed_time_file << elapsed_time << std::endl;
                 }
                 // printf("Thread %d updated row id %d for %ld ms", thread_id, id, elapsed_time);
             }
-            // std::this_thread::sleep_for(std::chrono::milliseconds(1000 - elapsed_time)); // 
-compensate for the time spent on updating
+            // std::this_thread::sleep_for(std::chrono::milliseconds(1000 - elapsed_time)); // compensate for the time spent on updating
         }
         if (thread_id == 1)
             elapsed_time_file.close();
@@ -154,8 +142,7 @@ int main(int argc, char *argv[])
     {
         if (argc != 5)
         {
-            std::cerr << "Usage: " << argv[0] << " update <num_rows_per_thread> <num_threads> 
-<num_seconds>" << std::endl;
+            std::cerr << "Usage: " << argv[0] << " update <num_rows_per_thread> <num_threads> <num_seconds>" << std::endl;
             return 1;
         }
         int num_rows_per_thread = std::stoi(argv[2]);
@@ -167,8 +154,7 @@ int main(int argc, char *argv[])
             conn->setSchema(database);
             connections.push_back(std::move(conn));
             int start_id = i * num_rows_per_thread + 1;
-            threads.push_back(std::thread(update_data, i, start_id, num_rows_per_thread, num_seconds, 
-connections[i].get()));
+            threads.push_back(std::thread(update_data, i, start_id, num_rows_per_thread, num_seconds, connections[i].get()));
         }
 
         for (auto &t : threads)
@@ -179,4 +165,3 @@ connections[i].get()));
 
     return 0;
 }
-
