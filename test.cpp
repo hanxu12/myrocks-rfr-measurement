@@ -12,11 +12,9 @@
 #include <prepared_statement.h>
 #include <mutex>
 #include <fstream>
-#include <random>
 
 using namespace sql;
 std::mutex print_mtx;
-int overall_cnt = 0;
 
 std::string random_string(size_t length)
 {
@@ -68,22 +66,18 @@ void prepare_data(const std::string &table_name, int num_rows, Connection *conn)
     }
 }
 
-void update_data(int thread_id, int start_id, int end_id, int num_seconds, Connection *conn)
+void update_data(int thread_id, int start_id, int num_rows, int num_seconds, Connection *conn)
 {
     try
     {
+        // std::cout << "Thread " << thread_id << " is updating " << num_rows << " rows..." << 
+std::endl;
         std::unique_ptr<PreparedStatement> pstmt(conn->prepareStatement("UPDATE test_table SET data = 
 ? WHERE id = ?"));
         auto start_time = std::chrono::steady_clock::now();
         std::ofstream elapsed_time_file;
         if (thread_id == 1)
             elapsed_time_file.open("elapsed_time.txt", std::ios::app);
-
-        // Seed random number generator
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_int_distribution<> distr(start_id, end_id);
-        int cnt = 0;
         while (true)
         {
             int cur_sec = 
@@ -91,27 +85,34 @@ std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now(
 start_time).count();
             if (cur_sec > num_seconds)
             {
-                print_mtx.lock();
-                overall_cnt += cnt;
-                print_mtx.unlock();
                 break;
             }
-            auto start = std::chrono::steady_clock::now();
-            int id = distr(gen); // Generate random id within the desired range
-            std::string rand_str = random_string(255);
-            pstmt->setString(1, rand_str);
-            pstmt->setInt(2, id);
-            pstmt->executeUpdate();
-            auto elapsed_time = 
+            // std::cout << "Thread " << thread_id << " is updating " << num_rows << " rows at " << 
+cur_sec << " sec" << std::endl;
+            for (int i = 0; i < num_rows; ++i)
+            {
+                // std::cout << "idx " << i << std::endl;
+                auto start = std::chrono::steady_clock::now();
+                int id = start_id + i;
+                std::string rand_str = random_string(255);
+                pstmt->setString(1, rand_str);
+                pstmt->setInt(2, id);
+                pstmt->executeUpdate();
+                auto elapsed_time = 
 std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - 
 start).count();
-            cnt += 1;
-            if (thread_id == 1)
-            {
-                std::cout << "Thread " << thread_id << " updated row id " << id << " for " << 
+                if (thread_id == 1)
+                {
+                    const std::scoped_lock<std::mutex> lock(print_mtx); // scoped lock: 
+https://stackoverflow.com/a/14276591
+                    std::cout << "Thread " << thread_id << " updated row id " << id << " for " << 
 elapsed_time << " ms" << std::endl;
-                elapsed_time_file << elapsed_time << std::endl;
+                    elapsed_time_file << elapsed_time << std::endl;
+                }
+                // printf("Thread %d updated row id %d for %ld ms", thread_id, id, elapsed_time);
             }
+            // std::this_thread::sleep_for(std::chrono::milliseconds(1000 - elapsed_time)); // 
+compensate for the time spent on updating
         }
         if (thread_id == 1)
             elapsed_time_file.close();
@@ -121,7 +122,6 @@ elapsed_time << " ms" << std::endl;
         std::cerr << "Error in thread " << thread_id << ": " << e.what() << std::endl;
     }
 }
-
 
 int main(int argc, char *argv[])
 {
@@ -154,11 +154,11 @@ int main(int argc, char *argv[])
     {
         if (argc != 5)
         {
-            std::cerr << "Usage: " << argv[0] << " update <end_id> <num_threads> <num_seconds>" << 
-std::endl;
+            std::cerr << "Usage: " << argv[0] << " update <num_rows_per_thread> <num_threads> 
+<num_seconds>" << std::endl;
             return 1;
         }
-        int end_id = std::stoi(argv[2]);
+        int num_rows_per_thread = std::stoi(argv[2]);
         int num_threads = std::stoi(argv[3]);
         int num_seconds = std::stoi(argv[4]);
         for (int i = 0; i < num_threads; ++i)
@@ -166,8 +166,8 @@ std::endl;
             std::unique_ptr<Connection> conn(driver->connect(host, user, password));
             conn->setSchema(database);
             connections.push_back(std::move(conn));
-            int start_id = 1;
-            threads.push_back(std::thread(update_data, i, start_id, end_id, num_seconds, 
+            int start_id = i * num_rows_per_thread + 1;
+            threads.push_back(std::thread(update_data, i, start_id, num_rows_per_thread, num_seconds, 
 connections[i].get()));
         }
 
@@ -175,7 +175,6 @@ connections[i].get()));
         {
             t.join();
         }
-        std::cout << "Overall cnt: " << overall_cnt << std::endl;
     }
 
     return 0;
