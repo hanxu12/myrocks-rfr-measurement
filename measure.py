@@ -15,10 +15,8 @@ start_counting = False
 
 while 1:
     # Execute the command
-    cmd1 = f'mysql -u{user} -p{password} -e "SHOW SLAVE STATUS\\G" | awk -F\': \' 
-\'/Exec_Master_Log_Pos/ {{print $2}}\''
-    cmd2 = f'mysql -u{user} -p{password} -e "SHOW SLAVE STATUS\\G" | awk -F\': \' 
-\'/Seconds_Behind_Master/ {{print $2}}\''
+    cmd1 = f'mysql -u{user} -p{password} -e "SHOW SLAVE STATUS\\G" | awk -F\': \' \'/Exec_Master_Log_Pos/ {{print $2}}\''
+    cmd2 = f'mysql -u{user} -p{password} -e "SHOW SLAVE STATUS\\G" | awk -F\': \' \'/Seconds_Behind_Master/ {{print $2}}\''
     output1 = subprocess.check_output(cmd1, shell=True, text=True)
     output2 = subprocess.check_output(cmd2, shell=True, text=True)
 
