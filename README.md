@@ -33,13 +33,14 @@ To clean up the build artifacts:
 
 ## Usage
 
+Please make sure to set your MySQL credentials in the C++ and Python script before running any.
+
 ### Python Script
 
 To run the `measure.py` script:
 
 `python3 measure.py` 
 
-Please make sure to set your MySQL credentials in the script before running it.
 
 ### C++ Program
 
