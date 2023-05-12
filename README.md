@@ -4,11 +4,11 @@ This repository contains two files for benchmarking MySQL replication:
 
 1.  `measure.py`: This is a Python script that measures how long it takes for a MySQL follower to 
 catch up with its leader in a leader-follower replication setup. It continuously monitors two values: 
-`Exec_Master_Log_Pos` and `Seconds_Behind_Master`.
+`Exec_Master_Log_Pos` and `Seconds_Behind_Master`. **It should run on the follower.**
     
 2.  `test.cpp`: This is a C++ program that stress-tests a MySQL database by performing a large number 
 of updates within a specified period of time, and measures the time taken to perform each update 
-operation. It uses multiple-threading to perform these updates concurrently.
+operation. It uses multiple-threading to perform these updates concurrently. **It should run on the leader.**
     
 
 ## Prerequisites
