@@ -33,7 +33,7 @@ To clean up the build artifacts:
 
 ## Usage
 
-Please make sure to set your MySQL credentials in the C++ and Python script before running any.
+Please make sure to set the MySQL credentials in the C++ and Python script before running any.
 
 ### Python Script
 
